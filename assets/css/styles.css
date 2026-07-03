@@ -501,6 +501,29 @@ a.chip--clay:hover { background: var(--clay); color: #fff; transform: translateY
 
 .routine-context { font-family: var(--serif); font-size: clamp(1.2rem, 2.4vw, 1.6rem); margin: 22px 0 0; }
 
+/* start-date row (auto phase) */
+.rstart { margin-top: 10px; font-size: 0.82rem; color: var(--ink-soft); }
+.rstart b { color: var(--ink); font-weight: 600; }
+.rstart__btn { border: 0; background: none; padding: 0; color: var(--clay-deep); font-size: 0.82rem; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.rstart__btn:hover { color: var(--ink); }
+.rstart__hint { color: var(--ink-faint); }
+.rstart input[type="date"] { font: inherit; color: var(--ink); padding: 5px 9px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); margin-left: 6px; }
+
+/* 7-day dots + streak */
+.rweek { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+.rweek__dots { display: flex; gap: 6px; }
+.rweek__dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line); transition: background var(--t-med) var(--ease); }
+.rweek__dot.is-done { background: var(--clay); }
+.rweek__dot.is-today { box-shadow: 0 0 0 2px var(--clay-soft); }
+.rweek__dot.is-future { opacity: 0.45; }
+.rweek__label { font-size: 0.76rem; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; color: var(--clay-deep); }
+
+/* preview mode (viewing a day other than today) */
+.rcol.is-preview .rstep__n { cursor: default; }
+.rcol.is-preview .rstep__n:hover, .rcol.is-preview .rstep__n:active { transform: none; }
+.rcol.is-preview .rcol__prog { background: var(--surface); color: var(--ink-faint); border: 1px dashed var(--line-strong); }
+.rstep__n:disabled { cursor: default; }
+
 .routine-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(16px, 2.5vw, 26px); margin-top: 18px; }
 @media (max-width: 720px) { .routine-grid { grid-template-columns: 1fr; } }
 .rcol { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: clamp(18px, 2.4vw, 26px); transition: box-shadow var(--t-med) var(--ease); }

@@ -1,7 +1,7 @@
 ﻿/* Face Protocol — service worker (single-page routine).
    Network-first for the page, cache-first for assets. Scope-relative so it
    works under any GitHub Pages subpath. */
-var VERSION = "fp-v3";
+var VERSION = "fp-v4";
 var SCOPE = self.registration.scope;
 
 var PRECACHE = [
