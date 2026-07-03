@@ -259,7 +259,13 @@
     col.head.setAttribute("aria-expanded", yes);
     col.when.textContent = yes ? col.when.getAttribute("data-label") : "Tap to open";
     var b = col.body;
-    if (instant) { b.style.maxHeight = yes ? "none" : "0px"; return; }
+    if (instant) {
+      b.style.transition = "none";               // no padding/height flicker on load
+      b.style.maxHeight = yes ? "none" : "0px";
+      void b.offsetWidth;
+      b.style.transition = "";
+      return;
+    }
     if (yes) {
       b.style.maxHeight = "0px";
       void b.offsetWidth;

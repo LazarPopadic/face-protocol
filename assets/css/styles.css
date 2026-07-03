@@ -540,8 +540,11 @@ a.chip--clay:hover { background: var(--clay); color: #fff; transform: translateY
 .rcol__chev { flex-shrink: 0; width: 9px; height: 9px; border-right: 1.5px solid var(--ink-soft); border-bottom: 1.5px solid var(--ink-soft); transform: rotate(45deg); margin-bottom: 3px; transition: transform var(--t-med) var(--ease); }
 .rcol.is-collapsed .rcol__chev { transform: rotate(-45deg); margin-bottom: 0; }
 /* negative margin + equal padding: keeps the collapse clip while giving the
-   scaled circles and focus rings 8px of breathing room so they never cut off */
-.rcol__body { overflow: hidden; max-height: none; transition: max-height 0.5s var(--ease); margin: -8px; padding: 8px; }
+   scaled circles and focus rings 8px of breathing room so they never cut off.
+   The vertical padding must collapse with the column (border-box height can't
+   shrink below its padding, which otherwise leaves a 16px peek of step one). */
+.rcol__body { overflow: hidden; max-height: none; transition: max-height 0.5s var(--ease), padding 0.5s var(--ease); margin: -8px; padding: 8px; }
+.rcol.is-collapsed .rcol__body { padding-top: 0; padding-bottom: 0; }
 @keyframes donePulse {
   0% { box-shadow: 0 0 0 0 rgba(168, 116, 90, 0.4); }
   100% { box-shadow: 0 0 0 20px rgba(168, 116, 90, 0); }
@@ -599,8 +602,18 @@ a.chip--clay:hover { background: var(--clay); color: #fff; transform: translateY
 .rstep__note { font-size: 0.78rem; color: var(--ink-faint); margin-top: 1px; }
 .rest-note { margin: 12px 0 0; font-size: 0.85rem; color: var(--ink-soft); background: var(--surface); border: 1px dashed var(--line-strong); border-radius: var(--r-sm); padding: 10px 13px; }
 
-.routine-extras { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: clamp(20px, 3vw, 30px); }
+.routine-extras { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-top: clamp(20px, 3vw, 30px); }
 @media (max-width: 720px) { .routine-extras { grid-template-columns: 1fr; } }
+
+/* slim supplements reminder at the top of the routine */
+.rsupp {
+  display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+  margin-bottom: clamp(18px, 3vw, 26px); padding: 11px 16px;
+  background: var(--clay-wash); border: 1px solid var(--clay-soft); border-radius: var(--r-md);
+}
+.rsupp__label { font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 600; color: var(--clay-deep); white-space: nowrap; }
+.rsupp__txt { font-size: 0.88rem; color: var(--ink-soft); }
+.rsupp__txt strong { color: var(--ink); font-weight: 600; }
 .rextra { border: 1px solid var(--line); border-radius: var(--r-md); padding: 16px 18px; background: var(--surface); }
 .rextra p.eyebrow { margin-bottom: 6px; }
 .rextra strong { font-family: var(--serif); font-weight: 400; font-size: 1.05rem; }
