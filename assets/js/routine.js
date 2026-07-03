@@ -104,6 +104,21 @@
       if (s.classList.contains("is-done")) done.push(i);
     });
     set(ckey(sec), done);
+    logToday();
+  }
+
+  // per-step daily log for the progress tracker (always TODAY's schedule,
+  // independent of which day is being viewed)
+  function logToday() {
+    if (!window.FPTracker) return;
+    var act = PHASES[state.phase].pm[DAYS[TODAY]] || null;
+    var kbase = "fpchk:" + ISO + ":" + state.phase + ":" + DAYS[TODAY] + ":";
+    FPTracker.writeToday({
+      ph: state.phase,
+      am: get(kbase + "am", []), amT: 5,
+      pm: get(kbase + "pm", []), pmT: act ? 4 : 3,
+      act: act
+    });
   }
   try {
     Object.keys(localStorage).forEach(function (k) {
@@ -361,4 +376,5 @@
   render();
   setOpen("am", state.open.am, true);
   setOpen("pm", state.open.pm, true);
+  logToday();   // record today's schedule even before any step is checked
 })();
