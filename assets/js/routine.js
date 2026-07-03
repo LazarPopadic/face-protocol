@@ -114,6 +114,36 @@
     updateProgress(sec, false);
   }
 
+  // "whole day done" banner, injected so both sites get it without HTML edits
+  var dayDone = document.createElement("div");
+  dayDone.id = "day-done";
+  dayDone.className = "day-done";
+  dayDone.setAttribute("role", "status");
+  dayDone.innerHTML = '<span class="day-done__spark" aria-hidden="true">✦</span>'
+    + '<span>Morning and evening both complete — that’s the whole day done.</span>'
+    + '<span class="day-done__spark" aria-hidden="true">✦</span>';
+  document.querySelector(".routine-grid").after(dayDone);
+  var celebrated = false;
+
+  function checkDayDone(mayCelebrate) {
+    var both = cols.am.root.classList.contains("is-complete") &&
+               cols.pm.root.classList.contains("is-complete");
+    dayDone.classList.toggle("is-shown", both);
+    if (both && mayCelebrate && !celebrated) {
+      celebrated = true;
+      dayDone.classList.remove("celebrate");
+      void dayDone.offsetWidth;
+      dayDone.classList.add("celebrate");
+      ["am", "pm"].forEach(function (s) {
+        cols[s].root.classList.remove("just-done");
+        void cols[s].root.offsetWidth;
+        cols[s].root.classList.add("just-done");
+        setTimeout(function () { cols[s].root.classList.remove("just-done"); }, 1500);
+      });
+    }
+    if (!both) celebrated = false;
+  }
+
   function updateProgress(sec, mayCelebrate) {
     var col = cols[sec];
     var total = col.list.querySelectorAll(".rstep").length;
@@ -128,6 +158,7 @@
       col.root.classList.add("just-done");
       setTimeout(function () { col.root.classList.remove("just-done"); }, 1500);
     }
+    checkDayDone(mayCelebrate);
   }
 
   /* ---- collapse / expand --------------------------------------------- */
