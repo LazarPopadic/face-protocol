@@ -1,24 +1,35 @@
 /* =====================================================================
    Aesthetic Protocol — interactive routine.
-   - Time-aware: morning column primary 05:00–15:00, evening otherwise;
-     the other column collapses into a tappable banner.
-   - Auto-advances phase from a saved start date (set once, editable).
-   - Step check-offs are locked to today; other days are a preview.
-   - 7-day dots + streak counter; whole-day banner when AM+PM complete.
+   - Day flips at 03:00, not midnight: a routine done at 00:30 still
+     counts for the evening you're finishing.
+   - Time-aware: morning column primary 05:00–15:00, evening otherwise.
+   - Every step carries an info line: what it does · beard · leave-on.
+   - Check-offs: today is live; past days of this week are editable
+     (backfill); future days are a locked preview.
+   - 7-day dots + streak; whole-day banner; per-step log for the tracker.
    All state lives in localStorage on the device.
    ===================================================================== */
 (function () {
   "use strict";
   if (!document.getElementById("routine")) return;
 
+  /* what / beard / time infos assume a short all-round beard (goatee length):
+     anything "through the beard" means massage down to the skin beneath. */
   var P = {
-    cleanse: { role: "Cleanse", name: "Toleriane Foaming Gel", brand: "La Roche-Posay" },
-    vitc:    { role: "Vitamin C", name: "C-Glow", brand: "Geek & Gorgeous" },
-    eye:     { role: "Eye cream", name: "Hyalu B5", brand: "La Roche-Posay", opt: true },
-    moist:   { role: "Moisturise", name: "Toleriane Sensitive", brand: "La Roche-Posay" },
-    spf:     { role: "Sunscreen", name: "Anthelios UVMune 400 SPF50+", brand: "La Roche-Posay" },
-    retinol: { role: "Retinol", name: "Retinol B3", brand: "La Roche-Posay", active: true, note: "pea-size · avoid the eye area" },
-    sa:      { role: "Salicylic acid", name: "Salicylic Acid 2%", brand: "The Ordinary", active: true, note: "nose / T-zone only" }
+    cleanse: { role: "Cleanse", name: "Toleriane Foaming Gel", brand: "La Roche-Posay",
+      info: "Removes oil, dirt and old SPF · wash through the beard to the skin · rinse off" },
+    vitc:    { role: "Vitamin C", name: "C-Glow", brand: "Geek & Gorgeous",
+      info: "Antioxidant — brightens and evens tone · a few drops, work through stubble to the skin · leave on" },
+    eye:     { role: "Eye cream", name: "Hyalu B5", brand: "La Roche-Posay", opt: true,
+      info: "Hydrates and de-puffs the under-eye · no beard contact — orbital bone only · leave on" },
+    moist:   { role: "Moisturise", name: "Toleriane Sensitive", brand: "La Roche-Posay",
+      info: "Hydrates and calms redness · massage through the beard down to the skin · leave on" },
+    spf:     { role: "Sunscreen", name: "Anthelios UVMune 400 SPF50+", brand: "La Roche-Posay",
+      info: "Blocks UV — the single biggest anti-ageing step · yes, over the beard too: skin under stubble still burns · leave on, reapply if long outdoors" },
+    retinol: { role: "Retinol", name: "Retinol B3", brand: "La Roche-Posay", active: true,
+      info: "Renews skin — texture, pores, collagen · pea-size, through stubble to the skin; avoid eyes and lips · leave on overnight" },
+    sa:      { role: "Salicylic acid", name: "Salicylic Acid 2%", brand: "The Ordinary",
+      info: "Dissolves blackhead plugs inside the pores · nose / T-zone only — the beard area doesn't need it · leave on" }
   };
 
   var DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -30,18 +41,20 @@
     { range: "Week 6+", name: "Full routine", pm: { Mon: "retinol", Wed: "retinol", Fri: "retinol", Tue: "sa", Thu: "sa" } }
   ];
 
-  var now = new Date();
-  var ISO = isoOf(now);
-  var TODAY = (now.getDay() + 6) % 7;
-  var morningPrimary = now.getHours() >= 5 && now.getHours() < 15;
-
   function isoOf(d) {
     return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
   }
+  function addDays(iso, n) { var d = new Date(iso); d.setDate(d.getDate() + n); return isoOf(d); }
   function get(k, fallback) {
     try { var v = JSON.parse(localStorage.getItem(k)); return v === null ? fallback : v; } catch (e) { return fallback; }
   }
   function set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+
+  var now = new Date();
+  var eff = new Date(now.getTime() - 3 * 3600 * 1000);   // the day flips at 03:00
+  var ISO = isoOf(eff);
+  var TODAY = (eff.getDay() + 6) % 7;
+  var morningPrimary = now.getHours() >= 5 && now.getHours() < 15;
 
   /* ---- start date & auto phase --------------------------------------- */
   function daysSinceStart() {
@@ -61,6 +74,25 @@
     day: TODAY,
     open: { am: morningPrimary, pm: !morningPrimary }
   };
+
+  function viewISO() { return addDays(ISO, state.day - TODAY); }
+  function mode() { return state.day === TODAY ? "today" : (state.day < TODAY ? "backfill" : "preview"); }
+
+  /* ---- fp-log helpers (shared store with tracker.js) ------------------ */
+  function logGet() { return get("fp-log", {}); }
+  function logSetDay(iso, entry) {
+    var l = logGet();
+    l[iso] = entry;
+    var keys = Object.keys(l).sort();
+    while (keys.length > 35) { delete l[keys.shift()]; }
+    set("fp-log", l);
+  }
+  function entryFor(iso, dayIdx) {
+    var e = logGet()[iso];
+    if (e) return e;
+    var act = PHASES[state.phase].pm[DAYS[dayIdx]] || null;
+    return { ph: state.phase, am: [], amT: 5, pm: [], pmT: act ? 4 : 3, act: act };
+  }
 
   /* ---- columns -------------------------------------------------------- */
   var cols = {};
@@ -95,25 +127,45 @@
     });
   });
 
-  /* ---- per-day check persistence (today only) ------------------------- */
-  function ckey(sec) { return "fpchk:" + ISO + ":" + state.phase + ":" + DAYS[state.day] + ":" + sec; }
-  function loadChecks(sec) { return get(ckey(sec), []); }
-  function saveChecks(sec) {
+  /* ---- persistence ------------------------------------------------------
+     today  -> fpchk keys (live day) + mirrored into fp-log
+     backfill -> written straight into fp-log for that date */
+  function ckey(sec) { return "fpchk:" + ISO + ":" + state.phase + ":" + DAYS[TODAY] + ":" + sec; }
+
+  function checkedNow(sec) {
     var done = [];
     cols[sec].list.querySelectorAll(".rstep").forEach(function (s, i) {
       if (s.classList.contains("is-done")) done.push(i);
     });
-    set(ckey(sec), done);
-    logToday();
+    return done;
   }
 
-  // per-step daily log for the progress tracker (always TODAY's schedule,
-  // independent of which day is being viewed)
+  function saveChecks(sec) {
+    var done = checkedNow(sec);
+    if (mode() === "today") {
+      set(ckey(sec), done);
+      logToday();
+    } else if (mode() === "backfill") {
+      var iso = viewISO();
+      var e = entryFor(iso, state.day);
+      e[sec] = done;
+      logSetDay(iso, e);
+      recordDay(iso, e.am.length >= e.amT && e.pm.length >= e.pmT);
+      renderWeek();
+    }
+  }
+
+  function loadChecks(sec) {
+    if (mode() === "today") return get(ckey(sec), []);
+    if (mode() === "backfill") return entryFor(viewISO(), state.day)[sec] || [];
+    return [];
+  }
+
+  // per-step daily log for the tracker (always TODAY's real schedule)
   function logToday() {
-    if (!window.FPTracker) return;
     var act = PHASES[state.phase].pm[DAYS[TODAY]] || null;
     var kbase = "fpchk:" + ISO + ":" + state.phase + ":" + DAYS[TODAY] + ":";
-    FPTracker.writeToday({
+    logSetDay(ISO, {
       ph: state.phase,
       am: get(kbase + "am", []), amT: 5,
       pm: get(kbase + "pm", []), pmT: act ? 4 : 3,
@@ -128,26 +180,29 @@
 
   /* ---- history: completed days, dots, streak -------------------------- */
   function history() { return get("fp-history", []); }
-  function recordToday(done) {
+  function recordDay(iso, done) {
     var h = history();
-    var i = h.indexOf(ISO);
-    if (done && i === -1) h.push(ISO);
+    var i = h.indexOf(iso);
+    if (done && i === -1) h.push(iso);
     if (!done && i !== -1) h.splice(i, 1);
     h.sort();
     if (h.length > 90) h = h.slice(-90);
     set("fp-history", h);
-    renderWeek();
   }
+  function recordToday(done) { recordDay(ISO, done); renderWeek(); }
+  function fullByLog(iso) {
+    var e = logGet()[iso];
+    return !!(e && e.am.length >= e.amT && e.pm.length >= e.pmT);
+  }
+  function dayComplete(iso) { return history().indexOf(iso) !== -1 || fullByLog(iso); }
   function streak() {
-    var h = history();
     var n = 0;
     var d = new Date(ISO);
-    if (h.indexOf(ISO) === -1) d.setDate(d.getDate() - 1);   // today pending → count up to yesterday
-    while (h.indexOf(isoOf(d)) !== -1) { n++; d.setDate(d.getDate() - 1); }
+    if (!dayComplete(ISO)) d.setDate(d.getDate() - 1);
+    while (dayComplete(isoOf(d))) { n++; d.setDate(d.getDate() - 1); }
     return n;
   }
 
-  // context row: context text + week widget (injected, no HTML edits needed)
   var ctx = document.getElementById("routine-context");
   var week = document.createElement("div");
   week.className = "rweek";
@@ -155,16 +210,12 @@
   ctx.after(week);
 
   function renderWeek() {
-    var h = history();
-    var monday = new Date(ISO);
-    monday.setDate(monday.getDate() - TODAY);
+    var monday = addDays(ISO, -TODAY);
     var dots = "";
     for (var i = 0; i < 7; i++) {
-      var d = new Date(monday);
-      d.setDate(monday.getDate() + i);
-      var dISO = isoOf(d);
+      var dISO = addDays(monday, i);
       var cls = "rweek__dot";
-      if (h.indexOf(dISO) !== -1) cls += " is-done";
+      if (dayComplete(dISO)) cls += " is-done";
       if (i === TODAY) cls += " is-today";
       if (i > TODAY) cls += " is-future";
       dots += '<span class="' + cls + '" title="' + DAYS[i] + '"></span>';
@@ -211,7 +262,7 @@
     }
   });
 
-  /* ---- day-done banner ------------------------------------------------- */
+  /* ---- day-done banner -------------------------------------------------- */
   var dayDone = document.createElement("div");
   dayDone.id = "day-done";
   dayDone.className = "day-done";
@@ -223,7 +274,7 @@
   var celebrated = false;
 
   function checkDayDone(mayCelebrate) {
-    if (state.day !== TODAY) { dayDone.classList.remove("is-shown"); return; }
+    if (mode() !== "today") { dayDone.classList.remove("is-shown"); return; }
     var both = cols.am.root.classList.contains("is-complete") &&
                cols.pm.root.classList.contains("is-complete");
     dayDone.classList.toggle("is-shown", both);
@@ -243,10 +294,10 @@
     if (!both) celebrated = false;
   }
 
-  /* ---- progress -------------------------------------------------------- */
+  /* ---- progress ---------------------------------------------------------- */
   function updateProgress(sec, mayCelebrate) {
     var col = cols[sec];
-    if (state.day !== TODAY) {
+    if (mode() === "preview") {
       col.prog.textContent = "Preview";
       col.root.classList.remove("is-complete");
       return;
@@ -266,7 +317,7 @@
     checkDayDone(mayCelebrate);
   }
 
-  /* ---- collapse / expand ------------------------------------------------ */
+  /* ---- collapse / expand -------------------------------------------------- */
   function setOpen(sec, yes, instant) {
     var col = cols[sec];
     state.open[sec] = yes;
@@ -275,7 +326,7 @@
     col.when.textContent = yes ? col.when.getAttribute("data-label") : "Tap to open";
     var b = col.body;
     if (instant) {
-      b.style.transition = "none";               // no padding/height flicker on load
+      b.style.transition = "none";
       b.style.maxHeight = yes ? "none" : "0px";
       void b.offsetWidth;
       b.style.transition = "";
@@ -297,7 +348,7 @@
     }
   }
 
-  /* ---- rendering --------------------------------------------------------- */
+  /* ---- rendering ------------------------------------------------------------ */
   function stepHTML(p, n, done, idx, locked) {
     return '<li class="rstep' + (p.active ? " rstep--active" : "") + (done ? " is-done" : "") + '" style="animation-delay:' + (idx * 45) + 'ms">'
       + '<button type="button" class="rstep__n" aria-pressed="' + done + '" aria-label="Mark step ' + n + ' done"' + (locked ? " disabled" : "") + '>'
@@ -307,13 +358,13 @@
       + '<span class="rstep__body">'
       + '<span class="rstep__role">' + p.role + (p.opt ? ' <em>· optional</em>' : '') + '</span>'
       + '<span class="rstep__prod">' + p.brand + ' ' + p.name + '</span>'
-      + (p.note ? '<span class="rstep__note">' + p.note + '</span>' : '')
+      + (p.info ? '<span class="rstep__info">' + p.info + '</span>' : '')
       + '</span></li>';
   }
 
   function renderList(sec, steps) {
-    var locked = state.day !== TODAY;
-    var done = locked ? [] : loadChecks(sec);
+    var locked = mode() === "preview";
+    var done = loadChecks(sec);
     cols[sec].list.innerHTML = steps.map(function (k, i) {
       return stepHTML(P[k], i + 1, done.indexOf(i) !== -1, i, locked);
     }).join("");
@@ -327,7 +378,7 @@
   function render() {
     var phase = PHASES[state.phase];
     var day = DAYS[state.day];
-    var preview = state.day !== TODAY;
+    var m = mode();
 
     document.querySelectorAll("[data-phase]").forEach(function (b) {
       b.classList.toggle("is-active", +b.getAttribute("data-phase") === state.phase);
@@ -336,18 +387,22 @@
       b.classList.toggle("is-active", b.getAttribute("data-day") === day);
     });
 
-    ctx.textContent = phase.range + " · " + phase.name + " — " + fullDay(day) + (preview ? " · preview" : "");
+    ctx.textContent = phase.range + " · " + phase.name + " — " + fullDay(day)
+      + (m === "preview" ? " · preview" : (m === "backfill" ? " · editing a past day" : ""));
+
+    // schedule shown: today/future from the phase; backfill from the stored entry
+    var act;
+    if (m === "backfill") act = entryFor(viewISO(), state.day).act;
+    else act = phase.pm[day];
 
     renderList("am", ["cleanse", "vitc", "eye", "moist", "spf"]);
-
-    var active = phase.pm[day];
     var pm = ["cleanse"];
-    if (active) pm.push(active);
+    if (act) pm.push(act);
     pm.push("eye", "moist");
     renderList("pm", pm);
 
     var note = document.getElementById("pm-note");
-    if (!active) {
+    if (!act) {
       note.hidden = false;
       note.innerHTML = state.phase === 0
         ? "No night treatment in this phase yet — just cleanse and moisturise while your skin settles."
@@ -357,10 +412,11 @@
     }
 
     ["am", "pm"].forEach(function (sec) {
-      cols[sec].root.classList.toggle("is-preview", preview);
+      cols[sec].root.classList.toggle("is-preview", m === "preview");
+      cols[sec].root.classList.toggle("is-backfill", m === "backfill");
       if (state.open[sec]) cols[sec].body.style.maxHeight = "none";
     });
-    if (preview) dayDone.classList.remove("is-shown");
+    if (m !== "today") dayDone.classList.remove("is-shown");
     else checkDayDone(false);
   }
 

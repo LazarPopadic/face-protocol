@@ -573,11 +573,26 @@ a.chip--clay:hover { background: var(--clay); color: #fff; transform: translateY
 .rweek__dot.is-future { opacity: 0.45; }
 .rweek__label { font-size: 0.76rem; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 600; color: var(--clay-deep); }
 
-/* preview mode (viewing a day other than today) */
+/* preview mode (viewing a future day) */
 .rcol.is-preview .rstep__n { cursor: default; }
 .rcol.is-preview .rstep__n:hover, .rcol.is-preview .rstep__n:active { transform: none; }
 .rcol.is-preview .rcol__prog { background: var(--surface); color: var(--ink-faint); border: 1px dashed var(--line-strong); }
 .rstep__n:disabled { cursor: default; }
+
+/* backfill mode (editing a past day of this week) */
+.rcol.is-backfill .rcol__prog { border: 1px dashed var(--clay); background: var(--clay-wash); }
+
+/* hourly tip lines */
+.rtip { margin: clamp(20px, 3vw, 28px) 0 0; font-size: 0.84rem; color: var(--ink-soft); line-height: 1.55; border-top: 1px solid var(--line); padding-top: 14px; }
+.rtip__label { font-size: 0.64rem; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 600; color: var(--clay-deep); margin-right: 8px; }
+.ptip { margin-top: 22px; background: var(--clay-wash); border: 1px solid var(--clay-soft); border-radius: var(--r-md); padding: 14px 18px; }
+.ptip__label { font-size: 0.64rem; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 600; color: var(--clay-deep); }
+.ptip__txt { margin: 5px 0 0; font-size: 0.9rem; color: var(--ink-soft); line-height: 1.55; }
+
+/* generated facts block */
+.pfacts { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-md); padding: 14px 18px; margin-top: 12px; }
+.pfacts__line { margin: 4px 0; font-size: 0.9rem; color: var(--ink-soft); line-height: 1.55; }
+.pfacts__line::before { content: "— "; color: var(--clay); }
 
 .routine-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(16px, 2.5vw, 26px); margin-top: 18px; }
 @media (max-width: 720px) { .routine-grid { grid-template-columns: 1fr; } }
@@ -596,10 +611,12 @@ a.chip--clay:hover { background: var(--clay); color: #fff; transform: translateY
 .rcol.is-collapsed .rcol__chev { transform: rotate(-45deg); margin-bottom: 0; }
 /* negative margin + equal padding: keeps the collapse clip while giving the
    scaled circles and focus rings 8px of breathing room so they never cut off.
-   The vertical padding must collapse with the column (border-box height can't
-   shrink below its padding, which otherwise leaves a 16px peek of step one). */
-.rcol__body { overflow: hidden; max-height: none; transition: max-height 0.5s var(--ease), padding 0.5s var(--ease); margin: -8px; padding: 8px; }
-.rcol.is-collapsed .rcol__body { padding-top: 0; padding-bottom: 0; }
+   When collapsed, BOTH the vertical padding and the vertical negative margins
+   must zero out — border-box height can't shrink below padding (16px peek),
+   and the leftover -8px bottom margin ate the card's padding, leaving the
+   header text sitting low instead of centred. */
+.rcol__body { overflow: hidden; max-height: none; transition: max-height 0.5s var(--ease), padding 0.5s var(--ease), margin 0.5s var(--ease); margin: -8px; padding: 8px; }
+.rcol.is-collapsed .rcol__body { padding-top: 0; padding-bottom: 0; margin-top: 0; margin-bottom: 0; }
 @keyframes donePulse {
   0% { box-shadow: 0 0 0 0 rgba(168, 116, 90, 0.4); }
   100% { box-shadow: 0 0 0 20px rgba(168, 116, 90, 0); }
@@ -655,6 +672,8 @@ a.chip--clay:hover { background: var(--clay); color: #fff; transform: translateY
 .rstep--active .rstep__role { color: var(--clay-deep); }
 .rstep__prod { font-size: 0.98rem; color: var(--ink); }
 .rstep__note { font-size: 0.78rem; color: var(--ink-faint); margin-top: 1px; }
+.rstep__info { font-size: 0.76rem; color: var(--ink-faint); line-height: 1.5; margin-top: 2px; max-width: 46ch; }
+.rstep.is-done .rstep__info { opacity: 0.55; }
 .rest-note { margin: 12px 0 0; font-size: 0.85rem; color: var(--ink-soft); background: var(--surface); border: 1px dashed var(--line-strong); border-radius: var(--r-sm); padding: 10px 13px; }
 
 .routine-extras { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-top: clamp(20px, 3vw, 30px); }
