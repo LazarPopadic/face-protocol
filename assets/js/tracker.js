@@ -535,7 +535,7 @@
       div.className = "rnudge";
       div.href = "progress.html";
       div.innerHTML = '<span class="rnudge__txt">' + msgs[0].text + '</span><span class="rnudge__go">Progress →</span>';
-      host.after(div);
+      host.before(div);   // the fresh daily insight leads; the constant supplements line follows
     }
     // hourly tip at the bottom of the routine section
     var section = document.getElementById("routine");

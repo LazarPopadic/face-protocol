@@ -233,12 +233,15 @@
 
   function renderStart() {
     var s = get("fp-start", null);
+    // with a start date the phase picks itself, so the big pills hide;
+    // "Change" brings them back while editing
+    phaseControl.classList.toggle("is-auto", !!s);
     if (s) {
       var d = daysSinceStart();
       var wk = Math.floor(d / 7) + 1;
       var pretty = new Date(s).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
-      startRow.innerHTML = 'Started <b>' + pretty + '</b> · week ' + wk +
-        ' — phase set automatically. <button type="button" class="rstart__btn" data-startedit>Change</button>';
+      startRow.innerHTML = '<b>' + PHASES[state.phase].name + '</b> · started ' + pretty + ' · week ' + wk +
+        ' — set automatically. <button type="button" class="rstart__btn" data-startedit>Change</button>';
     } else {
       startRow.innerHTML = '<button type="button" class="rstart__btn" data-startedit>Set my start date</button>' +
         ' <span class="rstart__hint">so the phase advances automatically</span>';
@@ -246,6 +249,7 @@
   }
   startRow.addEventListener("click", function (e) {
     if (e.target.closest("[data-startedit]")) {
+      phaseControl.classList.remove("is-auto");   // show the pills while editing
       startRow.innerHTML = '<label>Start date <input type="date" max="' + ISO + '" value="' + (get("fp-start", null) || ISO) + '"></label> ' +
         '<button type="button" class="rstart__btn" data-startsave>Save</button>';
       return;

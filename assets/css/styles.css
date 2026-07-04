@@ -158,6 +158,12 @@ em.term { font-style: italic; color: var(--clay-deep); }
   .nav__links::-webkit-scrollbar { display: none; }
   .nav__links a { padding: 7px 12px; font-size: 0.78rem; white-space: nowrap; }
 }
+/* all six tabs must fit a phone without hidden overflow */
+@media (max-width: 480px) {
+  .nav__links { gap: 0; }
+  .nav__links a { padding: 7px 7px; font-size: 0.72rem; letter-spacing: 0.02em; }
+  .nav__links a[aria-current="page"]::after { left: 7px; right: 7px; }
+}
 
 /* ---- Buttons / chips ------------------------------------------------- */
 .btn {
@@ -555,6 +561,11 @@ a.chip--clay:hover { background: var(--clay); color: #fff; transform: translateY
 }
 
 .routine-context { font-family: var(--serif); font-size: clamp(1.2rem, 2.4vw, 1.6rem); margin: 22px 0 0; }
+
+/* auto phase: with a start date saved, the pills and their label hide */
+.routine-control.is-auto .seg--phase { display: none; }
+.routine-control.is-auto > p:first-child { display: none; }
+.routine-control.is-auto .rstart { margin-top: 0; }
 
 /* start-date row (auto phase) */
 .rstart { margin-top: 10px; font-size: 0.82rem; color: var(--ink-soft); }
